@@ -1,0 +1,231 @@
+**# 表1 描述性统计
+tabstat  shifou lnguimo lnm_guimo xincheng lnpgdp renkoumidu fiscal second third gov fin human lnyiyuan lngongye lnjumingshouru czsrzb ,s(N mean sd min max)f(%12.3f) c(s) 
+
+
+reghdfe lnTotal Land2 $Control , absorb( id1 Year) vce(cl pair)
+did_multiplegt lnTotal pair  Year Land2  , robust_dynamic dynamic(5) placebo(5) breps(5) cluster(pair) controls($Control)
+
+qreg shifou gd renkoumidu second third fiscal gov fin human lnpgdp  gongye , quantile (.75)
+
+
+did_multiplegt lnm_guimo id year gd  , robust_dynamic dynamic(8) placebo(7) breps(5) cluster(id) controls(renkoumidu second third fiscal gov fin human lnpgdp  gongye)
+
+
+reghdfe shifou gd renkoumidu second  fiscal gov fin human lnpgdp  lngongye lnyiyuan, a(id year) vce(cluster id)
+reghdfe lnguimo gd renkoumidu second  fiscal gov fin human lnpgdp  lngongye lnyiyuan, a(id year) vce(cluster id)
+reghdfe lnm_guimo gd renkoumidu second fiscal gov fin human lnpgdp lngongye lnyiyuan, a(id year) vce(cluster id)
+
+xtset id year
+bacondecomp shifou gd cl(id)
+
+csdid  shifou, ivar(id) time(year) gvar(time) method(dripw)  wboot rseed(123) agg(simple) cl(id)
+
+
+xtset id year
+bacondecomp lnlight did_close cl(cityid)
+
+CSDID
+drop if did_close==.
+csdid  lnlight, ivar(id) time(year) gvar(time) method(dripw)  wboot rseed(123) agg(simple) cl(cityid)
+
+ 
+
+
+use"C:\Users\Desktop\基准回归.dta", clear
+列（1）
+reghdfe lnlight did_close,absorb(i.id i.year )vce(cluster cityid)
+列（2）
+reghdfe lnlight did_close,absorb(i.id i.year  c.pm##i.year c.peo##i.year c.elevation##i.year c.xiangzhen##i.year  c.slope##i.year  )vce(cluster cityid)
+列（3）
+reghdfe lnlight did_far,absorb(i.id i.year  c.pm##i.year c.peo##i.year c.elevation##i.year c.xiangzhen##i.year  c.slope##i.year  )vce(cluster cityid)
+
+
+
+
+
+
+reghdfe lndanjia1 gd renkoumidu second  fiscal gov fin human lnpgdp lnyiyuan lngongye , a(id year) vce(cluster id)
+reghdfe lnmianji1 gd renkoumidu second  fiscal gov fin human lnpgdp lnyiyuan lngongye , a(id year) vce(cluster id)
+reghdfe lnshouru1 gd renkoumidu second  fiscal gov fin human lnpgdp lnyiyuan lngongye , a(id year) vce(cluster id)
+
+
+replace distance=8 if distance>8
+replace distance=-8 if distance<-8
+replace distance=-. if i==0
+
+forvalues i=1/8{
+gen d_`i'=0
+replace d_`i'=1 if i==1&distance==-`i'
+}
+
+forvalues i=1/8{
+gen d`i'=0
+replace d`i'=1 if i==1&distance==`i'
+}
+
+gen current=0
+replace current=1 if i==1&distance==0
+
+replace d_1=0
+
+reghdfe shifou d_8 d_7 d_6 d_5 d_4 d_3 d_2 d_1 current d1 d2 d3 d4 d5  d6 d7 d8 renkoumidu second fiscal gov fin human lnpgdp lngongye lnyiyuan, a(id year) vce(cluster id)
+
+coefplot, baselevels omitted keep(d_8 d_7 d_6 d_5 d_4 d_3 d_2  d_1 current d1 d2 d3 d4 d5  d6 d7 d8)  ///
+vertical yline(0) ytitle("9km") xline(8) xtitle("时间") addplot(line @b @at) ciopts(recast(rcap)) scheme(s1mono) levels(95)    ///
+ coeflabels( d_8 = "-8"  d_7 = "-7"   d_6 = "-6"  d_5 = "-5"  d_4 = "-4"  d_3 = "-3" d_2 = "-2"  d_1="-1" ///
+ current = "0"  d1 = "1"  d2 = "2"  d3 = "3"  d4 = "4"  d5 = "5"  d6 = "6"  d7 = "7"  d8 = "8" )
+graph export "平行趋势检验.png",as(png) replace width(800) height(600)
+
+
+
+
+estimates store bjs1
+
+
+coefplot bjs1 bjs2 bjs3 , baselevels omitted  keep(d_8 d_7 d_6 d_5 d_4 d_3 d_2  d_1 current d1 d2 d3 d4 d5  d6 d7 d8)  ///
+vertical yline(0) ytitle("商住招拍挂") xline(8) xtitle("时间") addplot(line @b @at)  scheme(s1mono) levels(95)    ///
+ coeflabels( d_8 = "<=-8"  d_7 = "-7"   d_6 = "-6"  d_5 = "-5"  d_4 = "-4"  d_3 = "-3" d_2 = "-2"  d_1="-1" ///
+ current = "0"  d1 = "1"  d2 = "2"  d3 = "3"  d4 = "4"  d5 = "5"  d6 = "6"  d7 = "7"  d8 = ">=8" )
+graph export "平行趋势检验.png",as(png) replace width(800) height(600)
+
+
+
+
+
+
+折线图
+twoway (line guimo1 year), title("年份与规模折线图") xlabel(, format(%ty)) ylabel(, angle(horizontal))
+twoway (line guimo1 year) (line guimo2 year), title("年份与规模折线图") ///
+       xlabel(, format(%ty)) ylabel(, angle(horizontal)) legend(label(1 "规模1") label(2 "规模2"))
+
+
+bysort year xian:egen mianji1=total( mianji )
+bysort year xian:egen danjia1 =mean(danjia )
+bysort year xian:egen shouru1 =total( shouru )
+duplicates drop xian year ,force
+
+ encode xian,gen (xian1)
+ drop xian
+rename(xian1)(xian)
+
+
+
+
+ merge m:m  xian year using "D:\桌面\长三角数据\不同类型土地\1.dta",  keepusing( danjia1 shouru1 mianji1) keep(1 3) nogen
+ 
+ replace mianji1=0 if mianji1==.
+ replace danjia1 =0 if danjia1 ==.
+ replace shouru1 =0 if shouru1 ==.
+
+ 
+ gen lnmianji1=ln( mianji1+1)
+ gen lndanjia1 =ln( danjia1 +1)
+ gen lnshouru1 =ln( shouru1 +1)
+ 
+ sort id year
+ 
+ 
+ 
+ 面板数据：
+ xtset xian year
+ fillin xian year
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ gen a=danjia
+
+// 设置起始年份和结束年份
+local start_year 2007
+local end_year 2023
+
+// 外部循环：针对 policy_year
+foreach policy_year of numlist 2007/2023 {
+    // 内部循环：从2023递减到policy_year
+    forvalues year = `end_year'(-1)`policy_year' {
+        // 检查是否满足条件，然后更新变量 a
+        replace a = mianji + 1 if policy_year == `policy_year' & year == `year'
+    }
+}
+
+
+ 
+ 
+ sdid lnguimo  id year gd, vce(bootstrap) seed(1213) covariates(renkoumidu second third fiscal gov fin human lnpgdp yiyuan gongye, optimized)
+ 
+ 
+ 
+ 
+ 
+  bysort id: egen avg_mianji = mean(lnmianji1) if inrange(year, 2007, 2023)
+ drop if avg_mianji == 0
+
+ 
+ est store b2
+ bdiff, group( xnfenquan ) model(cap reghdfe shifou gd renkoumidu second third fiscal gov fin human lnpgdp  gongye , a(id year) vce(cluster id) keepsingletons) seed(620) reps(500) pdec(4) bs
+ 
+ **#缩尾1%
+winsor2 lnunit_price1 lndist_hsr lnarea_square level newland auction industrial, cuts(1 99) replace
+
+**#聚类到市级层面
+reghdfe lnunit_price1 gd lndist_hsr lnarea_square level newland auction industrial, a(xian transcation_year xincheng) vce(cluster shi),if dist_town <1000&year_town<2020
+
+**#高铁新城-时间双向固定效应
+reghdfe lnunit_price1 gd lndist_hsr lnarea_square level newland auction industrial, a(xian transcation_year xincheng xinchengyear) vce(cluster xian),if dist_town <1000&year_town<2020
+
+**#区
+reghdfe lnunit_price1 gd lndist_hsr lnarea_square level newland auction industrial, a(xian transcation_year xincheng) vce(cluster xian),if dist_town <1000&year_town<2020&qu==1
+
+**#县市
+reghdfe lnunit_price1 gd lndist_hsr lnarea_square level newland auction industrial, a(xian transcation_year xincheng) vce(cluster xian),if dist_town <1000&year_town<2020&qu==0
+ 
+ 
+ 
+ su renjunzb
+gen crenjunzb=renjunzb-r(mean)
+gen gdcrenjunzb=gd*crenjunzb
+pwcorr shifou gd gdcrenjunzb crenjunzb second third fiscal gov fin human lnpgdp gongye
+
+ 
+ 
+ 
+ egen x =median ( renjunzb1 )
+ 
+ 
+ 
+ 
+ 
+ *安慰剂
+ cap erase "D:\桌面\长三角数据\6.20\安慰剂.dta"
+
+permute gd beta = _b[gd] se = _se[gd] df = e(df_r),reps(500) seed(123) ///
+saving("D:\桌面\长三角数据\6.20\安慰剂.dta"): reghdfe lnm_guimo gd renkoumidu second  fiscal gov fin human lnpgdp  lngongye lnyiyuan, a(id year) vce(cluster id)
+
+use D:\桌面\长三角数据\6.20\安慰剂.dta,clear
+
+gen t_value = beta / se
+
+gen p_value = 2 * ttail(df,abs(beta/se))
+
+dpplot beta, xtitle("估计系数", size(*0.8)) xlabel(, format(%4.3f) labsize(small)) ///
+ytitle("P值", size(*0.8)) ylabel(, nogrid format(%4.3f) labsize(small)) note("") ///
+xlabel(-0.2(0.2)0.4, grid) ///
+xline(0.349,lp(shortdash)) ///
+caption("") graphregion(fcolor(white))
+ 
+ 
+ 
+ 
+ 
+ bacondecomp lnm_guimo gd ,cl(id)
+ csdid shifou gd renkoumidu second  fiscal gov fin human lnpgdp  lngongye lnyiyuan , ivar(id) time(year) gvar(first_treat) method(dripw) agg(simple) cl(id)
+ 
+ 
+ stackedev lnm_guimo gd   renkoumidu second  fiscal gov fin human lnpgdp  lngongye lnyiyuan , never_treat(no_treat) cohort(first_treat) time(year) unit_fe(id) clust_unit(id)
+ 
+ 
+ 
